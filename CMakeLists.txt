@@ -14,6 +14,8 @@ if (EXISTS "${CMAKE_CURRENT_LIST_DIR}/importedcontent/CMakeLists.txt")
     add_subdirectory(${CMAKE_CURRENT_LIST_DIR}/importedcontent)
 endif()
 
+add_custom_target(docs SOURCES README.md)
+
 qt_add_executable(appCppQmlSpriteEdit
     main.cpp
     resources.qrc
