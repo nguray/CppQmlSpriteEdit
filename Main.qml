@@ -147,6 +147,23 @@ ApplicationWindow {
             }
         }
 
+        Connections {
+            target: mainForm.pa
+            function onColorPickerRequested() {
+                mainForm.coldlg.selectedColor = mainForm.pa.selectColor
+                console.log("ColorPickerDialog request: ",mainForm.pa.selectColor)
+                mainForm.coldlg.open()
+            }
+        }
+
+        Connections {
+            target: mainForm.coldlg
+            function onAccepted() {
+                mainForm.pa.selectColor = mainForm.coldlg.selectedColor
+                console.log("Select Color request: ",mainForm.pa.selectColor)
+            }
+        }
+
     }
 
 

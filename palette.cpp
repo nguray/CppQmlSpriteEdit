@@ -1,4 +1,9 @@
 #include "palette.h"
+#include <iostream>
+#include <fstream>
+#include <sstream>
+#include <QGuiApplication>
+#include <QStyleHints>
 
 
 Palette::Palette(QQuickItem *parent)
@@ -22,9 +27,17 @@ Palette::Palette(QQuickItem *parent)
         }
     }
 
-    setFillColor(QColor(246,246,240));
+    setFillColor(QColor(246,230,240));
 
     setDefaultPalette();
+
+    // Set up the single-shot timer
+    clickTimer = new QTimer(this);
+    clickTimer->setSingleShot(true);
+
+    // Connect the timer timeout to your single click action
+    connect(clickTimer, &QTimer::timeout, this, &Palette::handleSingleLeftClick);
+
 
 }
 
@@ -35,55 +48,163 @@ Palette::~Palette()
     }
     tblColors.clear();
 
-    // if (clickTimer){
-    //     delete clickTimer;
-    // }
+    if (clickTimer){
+        delete clickTimer;
+    }
 
+}
+
+ColorRect *Palette::hitColors(QPoint p)
+{
+    for(auto r : tblColors){
+        if (r->contains(p)){
+            return r;
+        }
+
+    }
+    return NULL;
+}
+
+void Palette::handleSingleLeftClick() {
+    qDebug() << "Single Left click Detected!";
+    if (auto cr = hitColors(startPt) ){
+        // Select foreground color
+        foreGroundColor.setColor(cr->getColor());
+        emit foregroundColorChanged(cr->getColor());
+        update();
+    }else if (startPt.x()<2*cellSize){
+        //-- Swap foreground <-> background
+        auto c = backGroundColor.getColor();
+        backGroundColor.setColor(foreGroundColor.getColor());
+        foreGroundColor.setColor(c);
+        emit foregroundColorChanged(c);
+        update();
+    }
 }
 
 void Palette::mousePressEvent(QMouseEvent *event)
 {
+    QPoint p = event->position().toPoint();
+
+    fHitColor = false;
     if (event->button() == Qt::LeftButton) {
-        // Update value based on horizontal click position (0 to 100)
-        int newVal = static_cast<int>((event->position().x() / width()) * 100);
 
-        emit foregroundColorChanged(Qt::red);
-        qDebug() << "foreground color picked";
+        startPt = p;
+        clickTimer->start(QGuiApplication::styleHints()->mouseDoubleClickInterval());
 
-        update();
+        if (selColorRect = hitColors(p) ){
+            fHitColor = true;
+        }else if (foreGroundColor.contains(p)){
+            fHitColor = true;
+            selColorRect = &foreGroundColor;
+        }
 
         event->accept(); // Prevents the event from propagating further
     }
 }
 
+
+void Palette::mouseDoubleClickEvent(QMouseEvent *event)
+{
+    // Disable single clich handler
+    clickTimer->stop();
+
+    if (event->button() == Qt::LeftButton) {
+
+        QPoint p = event->position().toPoint();
+
+        // Handle left double-click
+        qDebug() << "Left mouse double-clicked at:" << event->pos();
+
+        if (selColorRect = hitColors(p) ){
+            emit colorPickerRequested(); // Tell QML to open the ColorDialog
+            // if (cr!=tblColors.front()){
+            //     QColorPicker picker(this);
+            //     picker.setColor(cr->getColor());
+
+            //     if (picker.exec() == QDialog::Accepted) {
+            //         QColor color = picker.color();
+            //         cr->setColor(color);
+            //         qDebug() << "Linux user picked color:" << color.name();
+            //         update();
+            //     }
+            // }
+        }else if (foreGroundColor.contains(p)){
+            selColorRect = &foreGroundColor;
+            emit colorPickerRequested(); // Tell QML to open the ColorDialog
+            // QColorPicker picker(this);
+            // picker.setColor(foreGroundColor.getColor());
+
+            // if (picker.exec() == QDialog::Accepted) {
+            //     QColor color = picker.color();
+            //     foreGroundColor.setColor(color);
+            //     qDebug() << "Linux user picked color:" << color.name();
+            //     emit foreGroundColorChanged(foreGroundColor.getColor());
+            //     update();
+
+            // }
+        }
+    }
+
+}
+
+
 void Palette::mouseMoveEvent(QMouseEvent *event)
 {
-    // Automatically called while dragging with LeftButton pressed
-    int newVal = static_cast<int>((event->position().x() / width()) * 100);
+    if ((event->buttons() & Qt::LeftButton)){
+        // Disable single clich handler
+        clickTimer->stop();
 
-    event->accept();
+        QPoint p = event->position().toPoint();
+        if (fHitColor){
+            QPoint v = p - startPt;
+            if (v!=QPoint(0,0)){
+                if (!dragColor){
+                    dragColor = new ColorRect(startPt.x()-cellSize/2,startPt.y()-cellSize,cellSize,selColorRect->getColor());
+                }
+                dragColor->moveCenter(startPt+v);
+                update();
+            }
+        }
+        event->accept();
+    }
+
 }
 
 void Palette::mouseReleaseEvent(QMouseEvent *event)
 {
-    if (event->button() == Qt::LeftButton) {
+    qDebug() << "Mouse Release button";
+    qDebug() << "--------------";
+    QPoint p = event->position().toPoint();
+    if (event->button() == Qt::LeftButton){
+        if (dragColor) {
+            if (auto cr = hitColors(p) ){
+                if (cr!= tblColors.front()){
+                    cr->setColor(dragColor->getColor());
+                }
+            }
+            delete dragColor;
+            dragColor = nullptr;
+            update();
+        }
         event->accept();
     }
+
 }
 
-void Palette::hoverEnterEvent(QHoverEvent *event)
-{
-    m_hovered = true;
-    update(); // Repaint to show hover state
-    event->accept();
-}
+// void Palette::hoverEnterEvent(QHoverEvent *event)
+// {
+//     m_hovered = true;
+//     update(); // Repaint to show hover state
+//     event->accept();
+// }
 
-void Palette::hoverLeaveEvent(QHoverEvent *event)
-{
-    m_hovered = false;
-    update(); // Repaint to restore normal state
-    event->accept();
-}
+// void Palette::hoverLeaveEvent(QHoverEvent *event)
+// {
+//     m_hovered = false;
+//     update(); // Repaint to restore normal state
+//     event->accept();
+// }
 
 void Palette::drawColors(QPainter *painter)
 {
@@ -111,6 +232,11 @@ void Palette::paint(QPainter *painter)
     foreGroundColor.draw(painter);
 
     drawColors(painter);
+
+    //--
+    if (dragColor){
+        dragColor->draw(painter);
+    }
 
 }
 
@@ -143,3 +269,8 @@ void Palette::setDefaultPalette()
 
 }
 
+void Palette::onSetForeGroundColor(QColor c)
+{
+    foreGroundColor.setColor(c);
+    update();
+}

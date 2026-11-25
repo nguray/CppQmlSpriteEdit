@@ -1,5 +1,6 @@
 import QtQuick
 import QtQuick.Layouts
+import QtQuick.Dialogs
 import CppQmlSpriteEdit
 
 ColumnLayout {
@@ -9,6 +10,8 @@ ColumnLayout {
     spacing: 0
 
     property alias ea: editarea
+    property alias pa: palette
+    property alias coldlg: colorDialog
 
     EditArea {
         id: editarea
@@ -26,5 +29,15 @@ ColumnLayout {
         // Optional: lock min/max so it never resizes even if space is tight
         Layout.minimumHeight: 34
         Layout.maximumHeight: 34
+    }
+
+    ColorDialog {
+        id: colorDialog
+        title: "Choose Fill Color"
+
+        // 2. Send the chosen QColor back to C++
+        // onAccepted: {
+        //     canvasItem.fillColor = selectedColor
+        // }
     }
 }
