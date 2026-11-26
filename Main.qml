@@ -107,28 +107,28 @@ ApplicationWindow {
             DrawingToolButton {
                 toolId: "rectangle_select"
                 iconPath: "qrc:/icons/rectangle_select.png"
-                onClicked: statusLabel.text = "Toolbar: New clicked"
+                onClicked: mainForm.ea.setSelectRectMode()
             }
             DrawingToolButton {
                 toolId: "polyline"
                 checked: true
                 iconPath: "qrc:/icons/layer-shape-polyline.png"
-                onClicked: statusLabel.text = "Toolbar: New clicked"
+                onClicked: mainForm.ea.setPencilMode()
             }
             DrawingToolButton {
                 toolId: "rectangle"
                 iconPath: "qrc:/icons/layer-shape.png"
-                onClicked: statusLabel.text = "Toolbar: New clicked"
+                onClicked:  mainForm.ea.setRectangleMode()
             }
             DrawingToolButton {
                 toolId: "ellipse"
                 iconPath: "qrc:/icons/layer-shape-ellipse.png"
-                onClicked: statusLabel.text = "Toolbar: Save clicked"
+                onClicked: mainForm.ea.setEllipseMode()
             }
             DrawingToolButton {
                 toolId: "flood_fill"
                 iconPath: "qrc:/icons/flood-fill.png"
-                onClicked: statusLabel.text = "Toolbar: Save clicked"
+                onClicked: mainForm.ea.setFillMode()
             }
             Item { Layout.fillWidth: true } // Pushes remaining items to the right
 
@@ -140,12 +140,12 @@ ApplicationWindow {
         id: mainForm
         anchors.fill: parent
 
-        Connections {
-            target: mainForm.ea
-            function onClicked() {
-                console.log("Gauge clicked! New value:", mainForm.ea.value)
-            }
-        }
+        // Connections {
+        //     target: mainForm.ea
+        //     function onClicked() {
+        //         console.log("Gauge clicked! New value:", mainForm.ea.value)
+        //     }
+        // }
 
         Connections {
             target: mainForm.pa

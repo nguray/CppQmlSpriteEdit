@@ -24,7 +24,7 @@ class EditArea : public QQuickPaintedItem
     Q_OBJECT
     QML_ELEMENT
 
-    Q_PROPERTY(int value READ value WRITE setValue NOTIFY valueChanged)
+    //Q_PROPERTY(int value READ value WRITE setValue NOTIFY valueChanged)
 
 public:
     explicit EditArea(QQuickItem *parent = nullptr);
@@ -35,12 +35,6 @@ public:
 
     void paint(QPainter *painter) override;
 
-    void setSelectRectMode();
-    void setPencilMode();
-    void setRectangleMode();
-    void setEllipseMode();
-    void setPasteMode();
-    void setFillMode();
 
 protected:
     // Override mouse event handlers
@@ -48,12 +42,13 @@ protected:
     void mouseMoveEvent(QMouseEvent *event) override;
     void mouseReleaseEvent(QMouseEvent *event) override;
     void hoverEnterEvent(QHoverEvent *event) override;
+    void hoverMoveEvent(QHoverEvent *event) override;
     void hoverLeaveEvent(QHoverEvent *event) override;
     void geometryChange(const QRectF &newGeometry, const QRectF &oldGeometry) override;
 
 signals:
-    void valueChanged();
-    //void clicked(); // Custom signal exposed to QML
+    //void valueChanged();
+    void clicked(); // Custom signal exposed to QML
     void imageChanged();
     void enableSave(bool fEnableSave);
     void pickImageColor(QColor c);
@@ -63,6 +58,12 @@ signals:
 public slots:
     void onForegroundColorChanged(QColor c);
     void onMenuActionTriggered();
+    void setPencilMode();
+    void setSelectRectMode();
+    void setRectangleMode();
+    void setEllipseMode();
+    void setPasteMode();
+    void setFillMode();
 
 
 private:

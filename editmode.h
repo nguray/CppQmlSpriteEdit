@@ -54,7 +54,8 @@ public:
     virtual bool mousePressEvent(QMouseEvent *event)=0;
     virtual bool mouseMoveEvent(QMouseEvent *event)=0;
     virtual bool mouseReleaseEvent(QMouseEvent *event)=0;
-    virtual void paintEvent(QPaintEvent *event, QPainter *painter)=0;
+    virtual void paintEvent(QPainter *painter)=0;
+    virtual bool hoverMoveEvent(QHoverEvent *event)=0;
 
 
 

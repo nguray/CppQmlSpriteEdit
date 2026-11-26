@@ -222,12 +222,18 @@ bool FillMode::mouseMoveEvent(QMouseEvent *event)
     return true;
 }
 
+bool FillMode::hoverMoveEvent(QHoverEvent *event)
+{
+
+    return false;
+}
+
 bool FillMode::mouseReleaseEvent(QMouseEvent *event)
 {
      return false;
 }
 
-void FillMode::paintEvent(QPaintEvent *event, QPainter *painter)
+void FillMode::paintEvent(QPainter *painter)
 {
     //
 }

@@ -133,6 +133,12 @@ bool PasteMode::mouseMoveEvent(QMouseEvent *event)
 
 }
 
+bool PasteMode::hoverMoveEvent(QHoverEvent *event)
+{
+
+    return false;
+}
+
 bool PasteMode::mouseReleaseEvent(QMouseEvent *event)
 {
     if ((event->button() == Qt::LeftButton)){
@@ -144,7 +150,7 @@ bool PasteMode::mouseReleaseEvent(QMouseEvent *event)
     return true;
 }
 
-void PasteMode::paintEvent(QPaintEvent *event, QPainter *painter)
+void PasteMode::paintEvent(QPainter *painter)
 {
     if (!selectRect->isPixNULL()){
         selectRect->draw(painter,cellSize,!fDoNotDrawHandles);

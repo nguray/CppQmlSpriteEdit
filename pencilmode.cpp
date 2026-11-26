@@ -188,6 +188,12 @@ bool PencilMode::mouseMoveEvent(QMouseEvent *event)
     return false;
 }
 
+bool PencilMode::hoverMoveEvent(QHoverEvent *event)
+{
+
+    return false;
+}
+
 bool PencilMode::mouseReleaseEvent(QMouseEvent *event)
 {
     QPointF canvasPos = EditMode::canvasInverseTransform.map(event->position());
@@ -238,7 +244,7 @@ void PencilMode::drawPolygonVertices(QPainter *painter)
 
 }
 
-void PencilMode::paintEvent(QPaintEvent *event, QPainter *painter)
+void PencilMode::paintEvent(QPainter *painter)
 {
     //if (QGuiApplication::keyboardModifiers().testFlag(Qt::ShiftModifier)) {
         // Shift key is currently pressed

@@ -17,6 +17,8 @@ void EllipseMode::init()
     selectRect.setPixNULL();
     selectRect.setRect(0,0,0,0);
     selectRect.fDefined = false;
+    fMoveSelectRect = false;
+    fDoNotDrawHandles = true;
     backupImage();
 
 }
@@ -158,21 +160,26 @@ bool EllipseMode::mouseMoveEvent(QMouseEvent *event)
             }
         }
 
-
-    }else{
-
-        if (auto c = selectRect.hitCorner(pt)){
-            mouseCursor = QCursor(c->cursorShape);
-        }else if (selectRect.contains(pt)){
-            mouseCursor = QCursor(Qt::SizeAllCursor);
-        }else{
-            mouseCursor = QCursor(Qt::ArrowCursor);
-        }
-
     }
 
     return false;
 
+}
+
+bool EllipseMode::hoverMoveEvent(QHoverEvent *event)
+{
+    QPointF canvasPos = EditMode::canvasInverseTransform.map(event->position());
+    auto pt = canvasPos.toPoint();
+
+    if (auto c = selectRect.hitCorner(pt)){
+        mouseCursor = QCursor(c->cursorShape);
+    }else if (selectRect.contains(pt)){
+        mouseCursor = QCursor(Qt::SizeAllCursor);
+    }else{
+        mouseCursor = QCursor(Qt::ArrowCursor);
+    }
+
+    return false;
 }
 
 bool EllipseMode::mouseReleaseEvent(QMouseEvent *event)
@@ -188,7 +195,7 @@ bool EllipseMode::mouseReleaseEvent(QMouseEvent *event)
 }
 
 
-void EllipseMode::paintEvent(QPaintEvent *event, QPainter *painter)
+void EllipseMode::paintEvent(QPainter *painter)
 {
     if (!selectRect.isPixNULL()){
         selectRect.draw(painter,cellSize,!fDoNotDrawHandles);

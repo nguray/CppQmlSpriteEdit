@@ -139,21 +139,26 @@ bool SelectRectMode::mouseMoveEvent(QMouseEvent *event)
             }
         }
 
-
-    }else{
-
-        if (auto c = selectRect->hitCorner(pt)){
-            mouseCursor = QCursor(c->cursorShape);
-        }else if (selectRect->contains(pt)){
-            mouseCursor = QCursor(Qt::SizeAllCursor);
-        }else{
-            mouseCursor = QCursor(Qt::ArrowCursor);
-        }
-
     }
 
     return false;
 
+}
+
+bool SelectRectMode::hoverMoveEvent(QHoverEvent *event)
+{
+    QPointF canvasPos = EditMode::canvasInverseTransform.map(event->position());
+    auto pt = canvasPos.toPoint();
+
+    if (auto c = selectRect->hitCorner(pt)){
+        mouseCursor = QCursor(c->cursorShape);
+    }else if (selectRect->contains(pt)){
+        mouseCursor = QCursor(Qt::SizeAllCursor);
+    }else{
+        mouseCursor = QCursor(Qt::ArrowCursor);
+    }
+
+    return false;
 }
 
 bool SelectRectMode::mouseReleaseEvent(QMouseEvent *event)
@@ -169,7 +174,7 @@ bool SelectRectMode::mouseReleaseEvent(QMouseEvent *event)
 }
 
 
-void SelectRectMode::paintEvent(QPaintEvent *event, QPainter *painter)
+void SelectRectMode::paintEvent(QPainter *painter)
 {
     if (!selectRect->isPixNULL()){
         selectRect->draw(painter,cellSize,!fDoNotDrawHandles);

@@ -18,6 +18,8 @@ void RectangleMode::init()
     selectRect.setRect(0,0,0,0);
     selectRect.fDefined = false;
     selectRect.resetHandles();
+    fMoveSelectRect = false;
+    fDoNotDrawHandles = false;
     backupImage();
 
 }
@@ -161,21 +163,26 @@ bool RectangleMode::mouseMoveEvent(QMouseEvent *event)
             }
         }
 
-
-    }else{
-
-        if (auto c = selectRect.hitCorner(pt)){
-            mouseCursor = QCursor(c->cursorShape);
-        }else if (selectRect.contains(pt)){
-            mouseCursor = QCursor(Qt::SizeAllCursor);
-        }else{
-            mouseCursor = QCursor(Qt::ArrowCursor);
-        }
-
     }
 
     return false;
 
+}
+
+bool RectangleMode::hoverMoveEvent(QHoverEvent *event)
+{
+    QPointF canvasPos = EditMode::canvasInverseTransform.map(event->position());
+    auto pt = canvasPos.toPoint();
+
+    if (auto c = selectRect.hitCorner(pt)){
+        mouseCursor = QCursor(c->cursorShape);
+    }else if (selectRect.contains(pt)){
+        mouseCursor = QCursor(Qt::SizeAllCursor);
+    }else{
+        mouseCursor = QCursor(Qt::ArrowCursor);
+    }
+
+    return false;
 }
 
 bool RectangleMode::mouseReleaseEvent(QMouseEvent *event)
@@ -191,7 +198,7 @@ bool RectangleMode::mouseReleaseEvent(QMouseEvent *event)
 }
 
 
-void RectangleMode::paintEvent(QPaintEvent *event, QPainter *painter)
+void RectangleMode::paintEvent(QPainter *painter)
 {
     if (!selectRect.isPixNULL()){
         selectRect.draw(painter,cellSize,!fDoNotDrawHandles);

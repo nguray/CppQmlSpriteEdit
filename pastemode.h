@@ -16,7 +16,8 @@ public:
     bool mousePressEvent(QMouseEvent *event);
     bool mouseMoveEvent(QMouseEvent *event);
     bool mouseReleaseEvent(QMouseEvent *event);
-    void paintEvent(QPaintEvent *event, QPainter *painter);
+    void paintEvent(QPainter *painter);
+    bool hoverMoveEvent(QHoverEvent *event);
 
 private:
     CornerRect *selCorner=NULL;

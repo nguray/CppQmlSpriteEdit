@@ -9,7 +9,7 @@ EditArea::EditArea(QQuickItem *parent)
     setHeight(150);
 
     // 1. Enable left mouse button events
-    setAcceptedMouseButtons(Qt::LeftButton);
+    setAcceptedMouseButtons(Qt::LeftButton|Qt::RightButton);
 
     // 2. Enable hover events (optional)
     setAcceptHoverEvents(true);
@@ -95,6 +95,8 @@ void EditArea::mouseMoveEvent(QMouseEvent *event)
     //int newVal = static_cast<int>((event->position().x() / width()) * 100);
     //setValue(std::clamp(newVal, 0, 100));
 
+    qDebug() << "Mouse move";
+
     if ((event->buttons() & Qt::MiddleButton)){
         // Check whether the mouse cursor is within the widget
         auto r = boundingRect();
@@ -122,10 +124,10 @@ void EditArea::mouseMoveEvent(QMouseEvent *event)
             //updateSaveMenuItem();
         }
 
-        // Change EditArea widget cursor if required
         if (cursor().shape()!=curEditMode->mouseCursor.shape()){
             setCursor(curEditMode->mouseCursor);
         }
+
     }
 
     event->accept();
@@ -133,9 +135,23 @@ void EditArea::mouseMoveEvent(QMouseEvent *event)
 
 void EditArea::mouseReleaseEvent(QMouseEvent *event)
 {
-    if (event->button() == Qt::LeftButton) {
-        event->accept();
+
+    if (event->button() == Qt::MiddleButton){
+        //
+        unsetCursor();
+    }else if (EditMode::fControlKey){
+        setCursor(pipetteCursor);
+    }else{
+        if (curEditMode->mouseReleaseEvent(event)){
+            update();
+        }
+        // Change EditArea widget cursor if required
+        if (cursor().shape()!=curEditMode->mouseCursor.shape()){
+            setCursor(curEditMode->mouseCursor);
+        }
     }
+
+    event->accept();
 }
 
 void EditArea::hoverEnterEvent(QHoverEvent *event)
@@ -152,15 +168,26 @@ void EditArea::hoverLeaveEvent(QHoverEvent *event)
     event->accept();
 }
 
-
-void EditArea::setValue(int newValue)
+void EditArea::hoverMoveEvent(QHoverEvent *event)
 {
-    if (m_value == newValue)
-        return;
-    m_value = newValue;
-    emit valueChanged();
-    update(); // Triggers a repaint when the value changes
+    if (curEditMode->hoverMoveEvent(event)){
+        update();
+    }
+    // Change EditArea widget cursor if required
+    if (cursor().shape()!=curEditMode->mouseCursor.shape()){
+        setCursor(curEditMode->mouseCursor);
+    }
+    event->accept();
 }
+
+// void EditArea::setValue(int newValue)
+// {
+//     if (m_value == newValue)
+//         return;
+//     m_value = newValue;
+//     emit valueChanged();
+//     update(); // Triggers a repaint when the value changes
+// }
 
 void EditArea::onMenuActionTriggered() {
     qDebug() << "Menu item triggered my C++ component!";
@@ -239,20 +266,55 @@ void EditArea::paint(QPainter *painter)
 {
     //painter->setRenderHint(QPainter::Antialiasing);
 
-    // Draw background circle
-    // QPen bgPen(QColor("#e0e0e0"), 12);
-    // painter->setPen(bgPen);
-    // painter->drawArc(15, 15, width() - 30, height() - 30, 0, 360 * 16);
+    //-- Canvas Zoom Pan settings use to paint
+    // Store canvas size to trigger init Zoom Pan when get anpther image from Sprites widget if needed
+    EditMode::image->canvasSize = size();
+    EditMode::image->cellSize   = EditMode::cellSize;
+    EditMode::image->zoomFactor = EditMode::zoomFactor;
+    EditMode::image->canvasTranslation     = EditMode::canvasTranslation;
+    EditMode::image->zoomCenter = EditMode::zoomCenter;
 
-    // Draw progress arc based on m_value (0 to 100)
-    // QPen progressPen(QColor("#2196F3"), 12);
-    // painter->setPen(progressPen);
-    // int spanAngle = -(m_value / 100.0) * 360 * 16;
-    // painter->drawArc(15, 15, width() - 30, height() - 30, 90 * 16, spanAngle);
+    painter->save();
+
+    EditMode::canvasTransform.reset();
+    EditMode::canvasTransform.translate(EditMode::canvasTranslation.x(),EditMode::canvasTranslation.y());
+
+
+    EditMode::canvasTransform.translate(EditMode::zoomCenter.x(), EditMode::zoomCenter.y());
+    EditMode::canvasTransform.scale(EditMode::zoomFactor, EditMode::zoomFactor);
+    EditMode::canvasTransform.translate(-EditMode::zoomCenter.x(), -EditMode::zoomCenter.y());
+
+    painter->setTransform(EditMode::canvasTransform);
+    EditMode::canvasInverseTransform = EditMode::canvasTransform.inverted();
+
+    auto w = EditMode::cellSize*EditMode::image->size().width();
+    auto h = EditMode::cellSize*EditMode::image->size().height();
+    QRect r = QRect(0,0,w,h);
+    painter->fillRect(r,QColor(253,253,237));
 
     drawGrid(painter);
 
     drawPixels(painter);
+
+    if (!EditMode::image->isNull()){
+        int w = EditMode::image->size().width();
+        int h = EditMode::image->size().height();
+        painter->drawImage(QRect(w*EditMode::cellSize+10,4,w,h), *EditMode::image, EditMode::image->rect());
+
+        painter->drawImage(QRect(w*EditMode::cellSize+10,128,w,h), EditMode::image_bak, EditMode::image_bak.rect());
+
+        if (!EditMode::image_cpy.isNull()){
+            int cpy_w = EditMode::image_cpy.size().width();
+            int cpy_h = EditMode::image_cpy.size().height();
+            painter->drawImage(QRect(w*EditMode::cellSize+10,280,cpy_w,cpy_h), EditMode::image_cpy, EditMode::image_cpy.rect());
+        }
+    }
+
+    //qDebug() << "EditArea Paint Event";
+
+    curEditMode->paintEvent(painter);
+
+    painter->restore();
 
 }
 

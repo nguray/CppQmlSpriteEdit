@@ -13,12 +13,22 @@ ColumnLayout {
     property alias pa: palette
     property alias coldlg: colorDialog
 
-    EditArea {
-        id: editarea
-        objectName: "myeditarea" // Required so C++ can find it
-        value: 75
+    RowLayout {
         Layout.fillHeight: true // Expands to take up all leftover space
         Layout.fillWidth: true
+
+        EditArea {
+            id: editarea
+            objectName: "myeditarea" // Required so C++ can find it
+            Layout.fillHeight: true // Expands to take up all leftover space
+            Layout.fillWidth: true
+        }
+        Sprites {
+            id: sprites
+            objectName: "mysprites" // Required so C++ can find it
+            Layout.fillHeight: true // Expands to take up all leftover space
+            //Layout.preferredWidth: 72 // Sets the fixed height
+        }
     }
 
     Palette {
@@ -34,10 +44,5 @@ ColumnLayout {
     ColorDialog {
         id: colorDialog
         title: "Choose Fill Color"
-
-        // 2. Send the chosen QColor back to C++
-        // onAccepted: {
-        //     canvasItem.fillColor = selectedColor
-        // }
     }
 }

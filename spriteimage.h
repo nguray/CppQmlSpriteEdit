@@ -11,7 +11,7 @@ public:
     QString fileName;
     bool    fModified=0;
 
-    QSize   canvasSize;
+    QSizeF  canvasSize;
     int     cellSize  = 5;
     float   zoomFactor=1.0f;
     QPointF zoomCenter;
