@@ -30,6 +30,15 @@ qt_add_qml_module(appCppQmlSpriteEdit
         SOURCES palette.h palette.cpp
         RESOURCES resources.qrc
         SOURCES colorrect.cpp colorrect.h
+        SOURCES cornerrect.cpp cornerrect.h
+        SOURCES editmode.cpp editmode.h
+        SOURCES ellipsemode.cpp ellipsemode.h
+        SOURCES fillmode.cpp fillmode.h
+        SOURCES pastemode.cpp pastemode.h pencilmode.cpp pencilmode.h
+        SOURCES rectanglemode.cpp rectanglemode.h selectrectmode.cpp selectrectmode.h
+        SOURCES spriteimage.cpp spriteimage.h
+        SOURCES pixelrect.cpp pixelrect.h
+        SOURCES selectrect.cpp selectrect.h
 )
 
 # Qt for iOS sets MACOSX_BUNDLE_GUI_IDENTIFIER automatically since Qt 6.1.

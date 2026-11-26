@@ -41,6 +41,9 @@ public:
         }
      }
 
+    void save(std::string pathName, std::string fileName);
+    bool load(std::string pathName, std::string fileName);
+
     void paint(QPainter *painter) override;
 
 protected:
@@ -60,13 +63,21 @@ signals:
     void colorPickerRequested();
 
 public slots:
-    void onSetForeGroundColor(QColor c);
+    void onSetForegroundColor(QColor c);
 
 private slots:
     void handleSingleLeftClick();
 
 
 private:
+
+    enum
+    {
+        RGB_R_MASK = 0xFF << 24,
+        RGB_G_MASK = 0xFF << 16,
+        RGB_B_MASK = 0xFF << 8,
+        RGB_A_MASK = 0xFF
+    };
 
     //bool m_hovered = false;
     bool   fHitColor;
@@ -77,9 +88,15 @@ private:
     void        drawColors(QPainter *painter);
     void        setDefaultPalette();
 
+    unsigned char getRGBAlpha(unsigned int rgb);
+    unsigned char getRGBRed(unsigned int rgb);
+    unsigned char getRGBGreen(unsigned int rgb);
+    unsigned char getRGBBlue(unsigned int rgb);
+    unsigned int  RGBA(unsigned char r,unsigned char g,unsigned char b,unsigned char a);
+
     QColor      myGridColor = Qt::black;
-    ColorRect   foreGroundColor;
-    ColorRect   backGroundColor;
+    ColorRect   foregroundColor;
+    ColorRect   backgroundColor;
 
     ColorRect   *dragColor = nullptr;
 

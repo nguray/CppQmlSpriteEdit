@@ -69,14 +69,14 @@ void Palette::handleSingleLeftClick() {
     qDebug() << "Single Left click Detected!";
     if (auto cr = hitColors(startPt) ){
         // Select foreground color
-        foreGroundColor.setColor(cr->getColor());
+        foregroundColor.setColor(cr->getColor());
         emit foregroundColorChanged(cr->getColor());
         update();
     }else if (startPt.x()<2*cellSize){
         //-- Swap foreground <-> background
-        auto c = backGroundColor.getColor();
-        backGroundColor.setColor(foreGroundColor.getColor());
-        foreGroundColor.setColor(c);
+        auto c = backgroundColor.getColor();
+        backgroundColor.setColor(foregroundColor.getColor());
+        foregroundColor.setColor(c);
         emit foregroundColorChanged(c);
         update();
     }
@@ -94,9 +94,9 @@ void Palette::mousePressEvent(QMouseEvent *event)
 
         if (selColorRect = hitColors(p) ){
             fHitColor = true;
-        }else if (foreGroundColor.contains(p)){
+        }else if (foregroundColor.contains(p)){
             fHitColor = true;
-            selColorRect = &foreGroundColor;
+            selColorRect = &foregroundColor;
         }
 
         event->accept(); // Prevents the event from propagating further
@@ -129,17 +129,17 @@ void Palette::mouseDoubleClickEvent(QMouseEvent *event)
             //         update();
             //     }
             // }
-        }else if (foreGroundColor.contains(p)){
-            selColorRect = &foreGroundColor;
+        }else if (foregroundColor.contains(p)){
+            selColorRect = &foregroundColor;
             emit colorPickerRequested(); // Tell QML to open the ColorDialog
             // QColorPicker picker(this);
-            // picker.setColor(foreGroundColor.getColor());
+            // picker.setColor(foregroundColor.getColor());
 
             // if (picker.exec() == QDialog::Accepted) {
             //     QColor color = picker.color();
-            //     foreGroundColor.setColor(color);
+            //     foregroundColor.setColor(color);
             //     qDebug() << "Linux user picked color:" << color.name();
-            //     emit foreGroundColorChanged(foreGroundColor.getColor());
+            //     emit foregroundColorChanged(foregroundColor.getColor());
             //     update();
 
             // }
@@ -228,8 +228,8 @@ void Palette::paint(QPainter *painter)
     painter->setPen(QPen(myGridColor, 0.5, Qt::SolidLine, Qt::RoundCap,
                         Qt::RoundJoin));
 
-    backGroundColor.draw(painter);
-    foreGroundColor.draw(painter);
+    backgroundColor.draw(painter);
+    foregroundColor.draw(painter);
 
     drawColors(painter);
 
@@ -262,15 +262,123 @@ void Palette::setDefaultPalette()
     tblColors[i++]->setColor(QColor(0x80, 0x00, 0x80, 0xFF));
     tblColors[i++]->setColor(QColor(0xFF, 0x00, 0xFF, 0xFF));
 
-    foreGroundColor = ColorRect(1,1,1.2*cellSize,QColor(0x80, 0x80, 0xF0, 0xFF));
-    backGroundColor = ColorRect(1,1,2*cellSize,QColor(0x00, 0x00, 0x00, 0x00));
+    foregroundColor = ColorRect(1,1,1.2*cellSize,QColor(0x80, 0x80, 0xF0, 0xFF));
+    backgroundColor = ColorRect(1,1,2*cellSize,QColor(0x00, 0x00, 0x00, 0x00));
 
-    emit foregroundColorChanged(foreGroundColor.getColor());
+    emit foregroundColorChanged(foregroundColor.getColor());
 
 }
 
-void Palette::onSetForeGroundColor(QColor c)
+void Palette::onSetForegroundColor(QColor c)
 {
-    foreGroundColor.setColor(c);
+    foregroundColor.setColor(c);
     update();
+}
+
+unsigned char Palette::getRGBAlpha(unsigned int rgb) {
+    //-----------------------------------------------------------
+    return (rgb & RGB_A_MASK);
+}
+
+unsigned char Palette::getRGBRed(unsigned int rgb) {
+    //-----------------------------------------------------------
+    return (rgb & RGB_R_MASK) >> 24;
+}
+
+unsigned char Palette::getRGBGreen(unsigned int rgb) {
+    //-----------------------------------------------------------
+    return (rgb & RGB_G_MASK) >> 16;
+}
+
+unsigned char Palette::getRGBBlue(unsigned int rgb) {
+    //-----------------------------------------------------------
+    return (rgb & RGB_B_MASK) >> 8;
+}
+
+unsigned int Palette::RGBA(unsigned char r, unsigned char g, unsigned char b,
+                           unsigned char a) {
+    //-----------------------------------------------------------
+    return (b << 8) | (g << 16) | (r << 24) | (a);
+}
+
+void Palette::save(std::string pathName, std::string fileName) {
+    std::string fullPathName;
+    //-------------------------------------------------
+    if (pathName != "") {
+        fullPathName = pathName + "/" + fileName;
+    } else {
+        fullPathName = fileName;
+    }
+    std::ofstream f(fullPathName);
+    if (f.is_open()) {
+        //--
+        QColor qc;
+        unsigned int ic;
+        qc = foregroundColor.getColor();
+        ic = RGBA(qc.red(), qc.green(), qc.blue(), qc.alpha());
+        f << "FOREGROUND " << ic << std::endl;
+        //--
+        qc = backgroundColor.getColor();
+        ic = RGBA(qc.red(), qc.green(), qc.blue(), qc.alpha());
+        f << "BACKGROUND " << ic << std::endl;
+        //--
+        for (int i = 0; i < nbRows * nbColumns; i++) {
+            qc = tblColors[i]->getColor();
+            ic = RGBA(qc.red(), qc.green(), qc.blue(), qc.alpha());
+            f << ic << std::endl;
+        }
+        f.close();
+    }
+}
+
+bool Palette::load(std::string pathName, std::string fileName) {
+    unsigned int ic;
+    std::string strline;
+    std::string strWord;
+    std::string fullPathName;
+    //-------------------------------------------------
+    if (pathName != "") {
+        fullPathName = pathName + "/" + fileName;
+    } else {
+        fullPathName = fileName;
+    }
+
+    std::ifstream f(fullPathName);
+    if (f.is_open()) {
+        int i = 0;
+        //--
+        while (!f.eof()) {
+            std::getline(f, strline);
+            std::stringstream ss(strline);
+            ss >> strWord;
+            if (strWord == "FOREGROUND") {
+                ss >> strWord;
+                ic = std::atoi(strWord.c_str());
+                foregroundColor.setColor(QColor(getRGBRed(ic), getRGBGreen(ic),
+                                                getRGBBlue(ic), getRGBAlpha(ic)));
+                emit foregroundColorChanged(foregroundColor.getColor());
+            } else if (strWord == "BACKGROUND") {
+                ss >> strWord;
+                ic = std::atoi(strWord.c_str());
+                backgroundColor.setColor(QColor(getRGBRed(ic), getRGBGreen(ic),
+                                                getRGBBlue(ic), getRGBAlpha(ic)));
+            } else {
+                ic = std::atoi(strWord.c_str());
+                if (i < nbRows * nbColumns) {
+                    tblColors[i]->setColor(QColor(getRGBRed(ic), getRGBGreen(ic),
+                                                  getRGBBlue(ic), getRGBAlpha(ic)));
+                    i++;
+                } else {
+                    break;
+                }
+            }
+        }
+        f.close();
+        return true;
+    }else{
+
+        setDefaultPalette();
+
+    }
+    return false;
 }

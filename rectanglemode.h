@@ -1,0 +1,34 @@
+#ifndef RECTANGLEMODE_H
+#define RECTANGLEMODE_H
+
+#include "editmode.h"
+#include <QPainter>
+#include "selectrect.h"
+
+class RectangleMode : public EditMode
+{
+public:
+    RectangleMode();
+    ~RectangleMode();
+
+    void init();
+    void updateImage();
+    bool mousePressEvent(QMouseEvent *event);
+    bool mouseMoveEvent(QMouseEvent *event);
+    bool mouseReleaseEvent(QMouseEvent *event);
+    void paintEvent(QPaintEvent *event, QPainter *painter);
+
+
+private:
+    CornerRect *selCorner=NULL;
+    SelectRect  selectRect;
+    bool fMoveSelectRect = false;
+    bool fDoNotDrawHandles = false;
+    QPoint startPt;
+
+    void drawRectangle();
+    void fillRectangle();
+
+};
+
+#endif // RECTANGLEMODE_H
