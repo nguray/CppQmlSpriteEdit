@@ -41,8 +41,8 @@ public:
         }
      }
 
-    void save(std::string pathName, std::string fileName);
-    bool load(std::string pathName, std::string fileName);
+    Q_INVOKABLE void save(QString pathName, QString fileName);
+    Q_INVOKABLE bool load(QString pathName, QString fileName);
 
     void paint(QPainter *painter) override;
 

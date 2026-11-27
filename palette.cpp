@@ -301,13 +301,16 @@ unsigned int Palette::RGBA(unsigned char r, unsigned char g, unsigned char b,
     return (b << 8) | (g << 16) | (r << 24) | (a);
 }
 
-void Palette::save(std::string pathName, std::string fileName) {
+void Palette::save(QString pathName, QString fileName) {
     std::string fullPathName;
     //-------------------------------------------------
-    if (pathName != "") {
-        fullPathName = pathName + "/" + fileName;
+    auto  stdStrPathName = pathName.toStdString();
+    auto  stdStrFileName = fileName.toStdString();
+
+    if (stdStrPathName != "") {
+        fullPathName = stdStrPathName + "/" + stdStrFileName;
     } else {
-        fullPathName = fileName;
+        fullPathName = stdStrFileName;
     }
     std::ofstream f(fullPathName);
     if (f.is_open()) {
@@ -331,16 +334,19 @@ void Palette::save(std::string pathName, std::string fileName) {
     }
 }
 
-bool Palette::load(std::string pathName, std::string fileName) {
+bool Palette::load(QString pathName, QString fileName) {
     unsigned int ic;
     std::string strline;
     std::string strWord;
     std::string fullPathName;
     //-------------------------------------------------
-    if (pathName != "") {
-        fullPathName = pathName + "/" + fileName;
+    auto  stdStrPathName = pathName.toStdString();
+    auto  stdStrFileName = fileName.toStdString();
+
+    if ( stdStrPathName != "") {
+        fullPathName = stdStrPathName + "/" + stdStrFileName;
     } else {
-        fullPathName = fileName;
+        fullPathName = stdStrFileName;
     }
 
     std::ifstream f(fullPathName);
@@ -356,6 +362,7 @@ bool Palette::load(std::string pathName, std::string fileName) {
                 ic = std::atoi(strWord.c_str());
                 foregroundColor.setColor(QColor(getRGBRed(ic), getRGBGreen(ic),
                                                 getRGBBlue(ic), getRGBAlpha(ic)));
+                qDebug() << "ForegroundColorChanged Signal emit" << foregroundColor.getColor();
                 emit foregroundColorChanged(foregroundColor.getColor());
             } else if (strWord == "BACKGROUND") {
                 ss >> strWord;
@@ -382,3 +389,4 @@ bool Palette::load(std::string pathName, std::string fileName) {
     }
     return false;
 }
+

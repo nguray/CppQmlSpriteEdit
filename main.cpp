@@ -20,10 +20,11 @@ int main(int argc, char *argv[])
     QObject *root = engine.rootObjects().first();
     auto *palette = root->findChild<Palette *>("mypalette");
     auto *editarea = root->findChild<EditArea *>("myeditarea");
-
     if (palette && editarea) {
         QObject::connect(palette, &Palette::foregroundColorChanged,
                          editarea, &EditArea::onForegroundColorChanged);
+        // Load backup colors after wiring to allow EditArea be notify of color changed
+        palette->load(".","myPalette.txt");
     }
 
     return QGuiApplication::exec();

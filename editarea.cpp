@@ -73,9 +73,12 @@ void EditArea::mousePressEvent(QMouseEvent *event)
         }
         setCursor(pipetteCursor);
     }else{
+
+
         if (curEditMode->mousePressEvent(event)){
             update();
             emit(imageChanged());
+            emit statusMessageRequested(QStringLiteral("Image changed..."), 3000);
             //updateSaveMenuItem();
         }
         // Change EditArea widget cursor if required
@@ -95,7 +98,7 @@ void EditArea::mouseMoveEvent(QMouseEvent *event)
     //int newVal = static_cast<int>((event->position().x() / width()) * 100);
     //setValue(std::clamp(newVal, 0, 100));
 
-    qDebug() << "Mouse move";
+    //qDebug() << "Mouse move";
 
     if ((event->buttons() & Qt::MiddleButton)){
         // Check whether the mouse cursor is within the widget
@@ -195,8 +198,8 @@ void EditArea::onMenuActionTriggered() {
 
 void EditArea::onForegroundColorChanged(QColor c)
 {
-    foregroundColor = c;
-    qDebug() << "foreground color changed";
+    EditMode::foregroundColor = c;
+    qDebug() << "foreground color changed " << c;
     update();
 }
 

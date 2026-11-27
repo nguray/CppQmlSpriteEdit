@@ -149,7 +149,9 @@ ApplicationWindow {
 
         Connections {
             target: mainForm.pa
+            // Answer to Signal colorPickerRequested from Palette Object
             function onColorPickerRequested() {
+                // display ColorDialog
                 mainForm.coldlg.selectedColor = mainForm.pa.selectColor
                 console.log("ColorPickerDialog request: ",mainForm.pa.selectColor)
                 mainForm.coldlg.open()
@@ -158,6 +160,7 @@ ApplicationWindow {
 
         Connections {
             target: mainForm.coldlg
+            // Answer to Signal accepted from ColorDialog
             function onAccepted() {
                 mainForm.pa.selectColor = mainForm.coldlg.selectedColor
                 console.log("Select Color request: ",mainForm.pa.selectColor)
@@ -168,21 +171,45 @@ ApplicationWindow {
 
 
     // 4. Status Bar (assigned to the footer property)
-    footer: ToolBar {
-        height: 30
-        RowLayout {
-            anchors.fill: parent
-            anchors.leftMargin: 8
-            anchors.rightMargin: 8
+    footer: StatusBar {
+        id: statusBar
+        defaultText: "Ready"
 
-            Label {
-                id: statusLabel
-                text: qsTr("Ready")
-                Layout.fillWidth: true
+        Connections {
+            target: mainForm.ea
+
+            function onStatusMessageRequested(message, timeout) {
+                statusBar.showMessage(message, timeout)
             }
-            Label {
-                text: qsTr("UTF-8")
+
+            function onStatusClearRequested() {
+                statusBar.clearMessage()
             }
         }
+
+        // Extra items placed here automatically appear on the right side
+        // ToolSeparator {}
+        // Label {
+        //     text: "UTF-8"
+        // }
     }
+
+    Component.onCompleted: {
+        console.log("Window and children are instantiated")
+
+        // Wiring Signal/Slots between Palette and Editarea
+        //mainForm.pa.foregroundColorChanged.connect(mainForm.ea.onForegroundColorChanged)
+
+        // Call your initialization functions or C++ backend methods here
+        //mainForm.pa.load(".","myPalette.txt");
+    }
+
+    Component.onDestruction: {
+        console.log("Window is being destroyed")
+
+        // Backuo current Palette colors
+        mainForm.pa.save(".","myPalette.txt");
+
+    }
+
 }

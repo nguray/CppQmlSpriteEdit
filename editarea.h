@@ -47,13 +47,13 @@ protected:
     void geometryChange(const QRectF &newGeometry, const QRectF &oldGeometry) override;
 
 signals:
-    //void valueChanged();
-    void clicked(); // Custom signal exposed to QML
+    // Declare the signal here. You don't implement this in the .cpp file.
+    //void clicked(); // Custom signal exposed to QML
     void imageChanged();
     void enableSave(bool fEnableSave);
     void pickImageColor(QColor c);
-    // Declare the signal here. You don't implement this in the .cpp file.
-    void showStatusMessage(const QString &message, int timeout = 0);
+    void statusMessageRequested(const QString &message, int timeout = 0);
+    void statusClearRequested();
 
 public slots:
     void onForegroundColorChanged(QColor c);
