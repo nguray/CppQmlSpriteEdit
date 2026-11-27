@@ -21,9 +21,10 @@ public:
 
 private:
     CornerRect *selCorner=NULL;
-    bool fMoveSelectRect = false;
-    bool fDoNotDrawHandles = false;
-    QPoint startPt;
+    bool    fMoveSelectRect = false;
+    bool    fDoNotDrawHandles = false;
+    QPoint  startPt;
+    bool    fEndPasteMode = false;
 
 };
 

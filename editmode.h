@@ -10,6 +10,7 @@
 #include <QCursor>
 #include "spriteimage.h"
 #include "selectrect.h"
+#include <QQuickPaintedItem>
 
 class EditMode {
 
@@ -17,6 +18,7 @@ public:
     EditMode();
     ~EditMode();
 
+    static QQuickPaintedItem *paintItem;
     static QColor foregroundColor;
     static QColor backgroundColor;
     static QSharedPointer<SpriteImage> image;

@@ -43,17 +43,17 @@ ApplicationWindow {
             Action {
                 text: qsTr("Cut")
                 shortcut: "Ctrl+X"
-                onTriggered: Qt.quit()
+                onTriggered: mainForm.ea.onCutRectangle()
             }
             Action {
                 text: qsTr("Copy")
                 shortcut: "Ctrl+C"
-                onTriggered: Qt.quit()
+                onTriggered: mainForm.ea.onCopyRectangle()
             }
             Action {
                 text: qsTr("Paste")
                 shortcut: "Ctrl+V"
-                onTriggered: Qt.quit()
+                onTriggered: mainForm.ea.onPaste()
             }
         }
 

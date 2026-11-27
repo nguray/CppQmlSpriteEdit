@@ -22,6 +22,8 @@ QTransform EditMode::canvasInverseTransform = QTransform();
 
 SelectRect  *EditMode::selectRect = nullptr;
 
+QQuickPaintedItem *EditMode::paintItem = nullptr;
+
 
 EditMode::EditMode()
 {

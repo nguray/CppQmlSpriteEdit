@@ -7,9 +7,10 @@ EditArea::EditArea(QQuickItem *parent)
 {
     setWidth(150);
     setHeight(150);
+    setFocus(true); // Requests focus within its parent scope
 
     // 1. Enable left mouse button events
-    setAcceptedMouseButtons(Qt::LeftButton|Qt::RightButton);
+    setAcceptedMouseButtons(Qt::LeftButton|Qt::RightButton|Qt::MiddleButton);
 
     // 2. Enable hover events (optional)
     setAcceptHoverEvents(true);
@@ -24,6 +25,7 @@ EditArea::EditArea(QQuickItem *parent)
     EditMode::image->fill(QColor(0, 0, 0, 0));
     EditMode::backupImage();
 
+    EditMode::paintItem = this;
     pencilMode = new PencilMode();
     rectangleMode = new RectangleMode();
     ellipseMode = new EllipseMode();
@@ -31,8 +33,11 @@ EditArea::EditArea(QQuickItem *parent)
     pasteMode = new PasteMode();
     fillMode = new FillMode();
 
+    curEditMode = pencilMode;
     setPencilMode();
 
+    m_timer = new QTimer(this);
+    connect(m_timer, &QTimer::timeout, this, &EditArea::toggleFlash);
 
 }
 
@@ -57,6 +62,7 @@ void EditArea::mousePressEvent(QMouseEvent *event)
 
     //     emit clicked();
     // }
+    forceActiveFocus(); // Grabs active focus when clicked
 
     if (event->button() == Qt::MiddleButton){
         // Store Starting position for computing canvas translation when mouse is moved
@@ -69,11 +75,10 @@ void EditArea::mousePressEvent(QMouseEvent *event)
         auto [fOk, c] = EditMode::getPixelColor(pt);
         if (fOk){
             EditMode::foregroundColor = c;
-            //emit(pickImageColor(c));
+            emit(pickImageColor(c));
         }
         setCursor(pipetteCursor);
     }else{
-
 
         if (curEditMode->mousePressEvent(event)){
             update();
@@ -109,16 +114,6 @@ void EditArea::mouseMoveEvent(QMouseEvent *event)
             lastMousePos = event->position();
             setCursor(Qt::SizeAllCursor);
             update();
-        }
-    }else if (EditMode::fControlKey){
-        QPointF canvasPos = EditMode::canvasInverseTransform.map(event->position());
-        auto pt = canvasPos.toPoint();
-        auto pix = EditMode::Pos2Pixel(pt);
-        QRect r = EditMode::image->rect();
-        if (r.contains(pix)){
-            setCursor(pipetteCursor);
-        }else{
-            unsetCursor();
         }
     }else{
         if (curEditMode->mouseMoveEvent(event)){
@@ -157,6 +152,36 @@ void EditArea::mouseReleaseEvent(QMouseEvent *event)
     event->accept();
 }
 
+void EditArea::wheelEvent(QWheelEvent *event)
+{
+    // Vertical scroll delta (positive = up/forward, negative = down/backward)
+    QPoint numDegrees = event->angleDelta() / 8;
+    if (!numDegrees.isNull()) {
+        QPoint numSteps = numDegrees / 15;
+        if (numSteps.y()>0){
+            float nv = EditMode::zoomFactor + 0.04f;
+            if (nv<10.0f){
+                EditMode::zoomFactor = nv;
+                update();
+            }
+        }else{
+            float nv = EditMode::zoomFactor - 0.04f;
+            if (nv>0.1f){
+                EditMode::zoomFactor = nv;
+                update();
+            }
+        }
+        //qDebug() << "Canvas Scale: " << EditMode::zoom;
+    }
+
+    // Horizontal scroll delta
+    //int xDelta = event->angleDelta().x();
+
+    // Mark event as accepted
+    event->accept();
+
+}
+
 void EditArea::hoverEnterEvent(QHoverEvent *event)
 {
     m_hovered = true;
@@ -173,24 +198,61 @@ void EditArea::hoverLeaveEvent(QHoverEvent *event)
 
 void EditArea::hoverMoveEvent(QHoverEvent *event)
 {
-    if (curEditMode->hoverMoveEvent(event)){
-        update();
-    }
-    // Change EditArea widget cursor if required
-    if (cursor().shape()!=curEditMode->mouseCursor.shape()){
-        setCursor(curEditMode->mouseCursor);
+    if (EditMode::fControlKey){
+        QPointF canvasPos = EditMode::canvasInverseTransform.map(event->position());
+        auto pt = canvasPos.toPoint();
+        auto pix = EditMode::Pos2Pixel(pt);
+        QRect r = EditMode::image->rect();
+        if (r.contains(pix)){
+            setCursor(pipetteCursor);
+        }else{
+            unsetCursor();
+        }
+    }else{
+        if (curEditMode->hoverMoveEvent(event)){
+            update();
+        }
+        // Change EditArea widget cursor if required
+        if (cursor().shape()!=curEditMode->mouseCursor.shape()){
+            setCursor(curEditMode->mouseCursor);
+        }
     }
     event->accept();
 }
 
-// void EditArea::setValue(int newValue)
-// {
-//     if (m_value == newValue)
-//         return;
-//     m_value = newValue;
-//     emit valueChanged();
-//     update(); // Triggers a repaint when the value changes
-// }
+void EditArea::keyPressEvent(QKeyEvent *event)
+{
+    //--
+    if (event->key()==Qt::Key_Shift){
+        EditMode::fShiftKey = true;
+        m_timer->start(400); // Toggle every 400 milliseconds
+        update();
+        event->accept();
+        return;
+    }else if (event->key()==Qt::Key_Control){
+        EditMode::fControlKey = true;
+        setCursor(pipetteCursor);
+        emit statusMessageRequested("Pipette Mode", 3000); // 3 seconds
+        event->accept();
+        return;
+    }
+    QQuickPaintedItem::keyPressEvent(event);
+}
+
+void EditArea::keyReleaseEvent(QKeyEvent *event)
+{
+    //--
+    if (event->key()==Qt::Key_Shift){
+        EditMode::fShiftKey = false;
+        m_timer->stop();
+        update();
+    }else if (event->key()==Qt::Key_Control){
+        EditMode::fControlKey = false;
+        setCursor(Qt::ArrowCursor);
+    }
+    event->accept();
+
+}
 
 void EditArea::onMenuActionTriggered() {
     qDebug() << "Menu item triggered my C++ component!";
@@ -203,19 +265,35 @@ void EditArea::onForegroundColorChanged(QColor c)
     update();
 }
 
+void EditArea::initZoomPan(QSizeF canvasSize)
+{
+
+    QSize imageSize = EditMode::image->size();
+    int minDim = canvasSize.height();
+    if (minDim>canvasSize.width()){
+        minDim = canvasSize.width();
+    }
+    EditMode::cellSize = (minDim-4) / imageSize.width();
+
+    EditMode::zoomFactor = 1.0f;
+
+    auto w = EditMode::cellSize*imageSize.width();
+    auto h = EditMode::cellSize*imageSize.height();
+    EditMode::canvasTranslation.setX(canvasSize.width()/2.0f - w/2.0f);
+    EditMode::canvasTranslation.setY(canvasSize.height()/2.0f - h/2.0f);
+
+    EditMode::zoomCenter.setX(w/2.0f);
+    EditMode::zoomCenter.setY(h/2.0f);
+
+}
 
 void EditArea::geometryChange(const QRectF &newGeometry, const QRectF &oldGeometry)
 {
     QQuickPaintedItem::geometryChange(newGeometry, oldGeometry);
 
     if (newGeometry.size() != oldGeometry.size()) {
-        // Handle resize logic here
-        auto minDim = newGeometry.height();
-        if (minDim>newGeometry.width()){
-            minDim = newGeometry.width();
-        }
-        QSize imageSize = EditMode::image->size();
-        EditMode::cellSize = (((int) minDim)-4) / imageSize.width();
+
+        initZoomPan(newGeometry.size());
 
         update(); // Trigger a repaint if needed
     }
@@ -313,17 +391,22 @@ void EditArea::paint(QPainter *painter)
         }
     }
 
-    //qDebug() << "EditArea Paint Event";
-
     curEditMode->paintEvent(painter);
 
     painter->restore();
 
 }
 
+void EditArea::toggleFlash()
+{
+    pencilMode->toggleFlash();
+    update();
+}
+
 
 void EditArea::setSelectRectMode()
 {
+    prevEditMode = curEditMode;
     curEditMode = selectRectMode;
     curEditMode->init();
     update();
@@ -331,6 +414,7 @@ void EditArea::setSelectRectMode()
 
 void EditArea::setPencilMode()
 {
+    prevEditMode = curEditMode;
     curEditMode = pencilMode;
     curEditMode->init();
     update();
@@ -338,6 +422,7 @@ void EditArea::setPencilMode()
 
 void EditArea::setRectangleMode()
 {
+    prevEditMode = curEditMode;
     curEditMode = rectangleMode;
     curEditMode->init();
     update();
@@ -345,6 +430,7 @@ void EditArea::setRectangleMode()
 
 void EditArea::setEllipseMode()
 {
+    prevEditMode = curEditMode;
     curEditMode = ellipseMode;
     curEditMode->init();
     update();
@@ -352,6 +438,7 @@ void EditArea::setEllipseMode()
 
 void EditArea::setPasteMode()
 {
+    prevEditMode = curEditMode;
     curEditMode = pasteMode;
     curEditMode->init();
     update();
@@ -360,10 +447,52 @@ void EditArea::setPasteMode()
 
 void EditArea::setFillMode()
 {
+    prevEditMode = curEditMode;
     curEditMode = fillMode;
     curEditMode->init();
     update();
 
+}
+
+void EditArea::setPreviousMode()
+{
+    curEditMode = prevEditMode;
+    curEditMode->init();
+    update();
+
+}
+
+void EditArea::onCopyRectangle()
+{
+    qDebug() << "Copy Select Rectangle";
+    QRect r = EditMode::selectRect->getPixRect();
+    r.adjust(0,0,1,1);
+    EditMode::image_cpy = EditMode::image->copy(r);
+    curEditMode->init();
+
+}
+
+void EditArea::onCutRectangle()
+{
+    qDebug() << "Cut Select Rectangle";
+    QRect r = EditMode::selectRect->getPixRect();
+    r.adjust(0,0,1,1);
+    EditMode::image_cpy = EditMode::image->copy(r);
+
+    QPainter painter(EditMode::image.get());
+    painter.setCompositionMode(QPainter::CompositionMode_Source);
+    r = EditMode::selectRect->getPixRect();
+    r.adjust(0,0,1,1);
+    painter.fillRect(r,EditMode::backgroundColor);
+    curEditMode->init();
+}
+
+void EditArea::onPaste()
+{
+    qDebug() << "Paste image";
+    if (!EditMode::image_cpy.isNull()){
+        setPasteMode();
+    }
 }
 
 

@@ -9,6 +9,7 @@
 
 #include "pastemode.h"
 #include <QCursor>
+#include "editarea.h"
 
 PasteMode::PasteMode() {}
 
@@ -41,13 +42,16 @@ void PasteMode::init()
     backupImage();
     pasteImage();
 
+    fMoveSelectRect = false;
+    fDoNotDrawHandles = false;
+    fEndPasteMode = false;
+
 }
 
 void PasteMode::updateImage()
 {
     restoreImage();
     pasteImage();
-
 }
 
 
@@ -71,7 +75,9 @@ bool PasteMode::mousePressEvent(QMouseEvent *event)
             fMoveSelectRect = true;
             fDoNotDrawHandles = true;
             return false;
-         }
+        }else{
+            fEndPasteMode = true;
+        }
     }
     return false;
 
@@ -147,6 +153,11 @@ bool PasteMode::mouseReleaseEvent(QMouseEvent *event)
     }
     fDoNotDrawHandles = false;
     mouseCursor = QCursor(Qt::ArrowCursor);
+
+    if (fEndPasteMode){
+        (static_cast<EditArea *>(paintItem))->setPreviousMode();
+    }
+
     return true;
 }
 

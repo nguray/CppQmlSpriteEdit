@@ -32,7 +32,6 @@ void PencilMode::init()
     mouseCursor = QCursor(Qt::ArrowCursor);
     lastPixel = QPoint();
     freePolygon();
-
 }
 
 void PencilMode::updateImage()

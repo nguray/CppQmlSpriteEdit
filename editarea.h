@@ -24,17 +24,12 @@ class EditArea : public QQuickPaintedItem
     Q_OBJECT
     QML_ELEMENT
 
-    //Q_PROPERTY(int value READ value WRITE setValue NOTIFY valueChanged)
-
 public:
     explicit EditArea(QQuickItem *parent = nullptr);
     ~EditArea();
 
-    int value() const { return m_value; }
-    void setValue(int newValue);
-
     void paint(QPainter *painter) override;
-
+    void setPreviousMode();
 
 protected:
     // Override mouse event handlers
@@ -45,10 +40,12 @@ protected:
     void hoverMoveEvent(QHoverEvent *event) override;
     void hoverLeaveEvent(QHoverEvent *event) override;
     void geometryChange(const QRectF &newGeometry, const QRectF &oldGeometry) override;
+    void keyPressEvent(QKeyEvent *event) override;
+    void keyReleaseEvent(QKeyEvent *event) override;
+    void wheelEvent(QWheelEvent *event) override;
 
 signals:
     // Declare the signal here. You don't implement this in the .cpp file.
-    //void clicked(); // Custom signal exposed to QML
     void imageChanged();
     void enableSave(bool fEnableSave);
     void pickImageColor(QColor c);
@@ -58,6 +55,9 @@ signals:
 public slots:
     void onForegroundColorChanged(QColor c);
     void onMenuActionTriggered();
+    void onCopyRectangle();
+    void onCutRectangle();
+    void onPaste();
     void setPencilMode();
     void setSelectRectMode();
     void setRectangleMode();
@@ -65,9 +65,12 @@ public slots:
     void setPasteMode();
     void setFillMode();
 
+private slots:
+    void toggleFlash();
+
 
 private:
-    int m_value = 50;
+
     bool m_hovered = false;
     QColor foregroundColor = Qt::blue;
 
@@ -85,8 +88,10 @@ private:
 
     void drawGrid(QPainter *painter);
     void drawPixels(QPainter *painter);
+    void initZoomPan(QSizeF canvasSize);
 
 
+    EditMode        *prevEditMode=NULL;
     EditMode        *curEditMode=NULL;
     PencilMode      *pencilMode;
     RectangleMode   *rectangleMode;
